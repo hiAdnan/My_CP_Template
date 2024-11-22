@@ -48,6 +48,29 @@ const double PI = acos(-1);
 //set_difference(all(v1), all(v2), back_inserter(v));
 #define endl '\n'
 //a%m is equivalent to ((a%m)+m)%m -->(it will work for both negative and positive value)
+//debugging code segment
+#ifndef ONLINE_JUDGE
+#define dbg(x) cerr << #x <<" "; _print(x); cerr << endl;
+#else
+#define dbg(x)
+#endif
+void _print(ll t) {cerr << t;}
+void _print(int t) {cerr << t;}
+void _print(string t) {cerr << t;}
+void _print(char t) {cerr << t;}
+void _print(ld t) {cerr << t;}
+void _print(double t) {cerr << t;}
+void _print(ull t) {cerr << t;}
+template <class T, class V> void _print(pair <T, V> p);
+template <class T> void _print(vector <T> v);
+template <class T> void _print(set <T> v);
+template <class T, class V> void _print(map <T, V> v);
+template <class T> void _print(multiset <T> v);
+template <class T, class V> void _print(pair <T, V> p) {cerr << "{"; _print(p.F); cerr << ","; _print(p.S); cerr << "}";}
+template <class T> void _print(vector <T> v) {cerr << "[ "; for (T i : v) {_print(i); cerr << " ";} cerr << "]";}
+template <class T> void _print(set <T> v) {cerr << "[ "; for (T i : v) {_print(i); cerr << " ";} cerr << "]";}
+template <class T> void _print(multiset <T> v) {cerr << "[ "; for (T i : v) {_print(i); cerr << " ";} cerr << "]";}
+template <class T, class V> void _print(map <T, V> v) {cerr << "[ "; for (auto i : v) {_print(i); cerr << " ";} cerr << "]";}
 bool cmp(pair<ll, ll> &a, pair<ll, ll> &b)
 {
    if (a.first > b.first)
@@ -92,11 +115,11 @@ ll modAdd(ll a, ll b, ll m)
 }
 ll modSub(ll a, ll b, ll m)
 {
-   return (a % m - b % m + m) % m;
+   return ((a % m ) - (b % m) + m) % m;
 }
-int modMul(int a, int b, int m)
+ll modMul(ll a, ll b, ll m)
 {
-   return (a % m * b % m) % m;
+   return ((a % m) * (b % m)) % m;
 }
 ll power(ll a, ll n)
 {
@@ -137,14 +160,16 @@ ll modDiv(ll a, ll b, ll m)
    return modMul(a, modInv(b, m), m);
 }
 const ll N = 1e6 + 5;
-const ll base = 33; // this should be greater than total distinct characters
+const ll base = 31; // this should be greater than total distinct characters
 vll pw(N), inv(N), Hash(N);
+// i precalculate in buldHash function.
 void preCal()
 {
    pw[0] = 1;
    for (ll i = 1; i < N; i++)
       pw[i] = modMul(pw[i - 1], base, mod);
    ll pw_inv = modInv(base, mod);
+   inv[0] = 1;
    for (ll i = 1; i < N; i++)
       inv[i] = modMul(inv[i - 1], pw_inv, mod);
 }
@@ -162,7 +187,7 @@ ll getHash(ll l, ll r)
    res = modMul(res, inv[l], mod);
    return res;
 }
-int double_cmp(double a, double b)
+ll double_cmp(double a, double b)
 {
    if (fabs(a - b) <= eps)
       return 0;
@@ -271,29 +296,6 @@ void bfs(ll s)
       }
    }
 }
-//debugging code segment
-#ifndef ONLINE_JUDGE
-#define dbg(x) cerr << #x <<" "; _print(x); cerr << endl;
-#else
-#define dbg(x)
-#endif
-void _print(ll t) {cerr << t;}
-void _print(int t) {cerr << t;}
-void _print(string t) {cerr << t;}
-void _print(char t) {cerr << t;}
-void _print(ld t) {cerr << t;}
-void _print(double t) {cerr << t;}
-void _print(ull t) {cerr << t;}
-template <class T, class V> void _print(pair <T, V> p);
-template <class T> void _print(vector <T> v);
-template <class T> void _print(set <T> v);
-template <class T, class V> void _print(map <T, V> v);
-template <class T> void _print(multiset <T> v);
-template <class T, class V> void _print(pair <T, V> p) {cerr << "{"; _print(p.F); cerr << ","; _print(p.S); cerr << "}";}
-template <class T> void _print(vector <T> v) {cerr << "[ "; for (T i : v) {_print(i); cerr << " ";} cerr << "]";}
-template <class T> void _print(set <T> v) {cerr << "[ "; for (T i : v) {_print(i); cerr << " ";} cerr << "]";}
-template <class T> void _print(multiset <T> v) {cerr << "[ "; for (T i : v) {_print(i); cerr << " ";} cerr << "]";}
-template <class T, class V> void _print(map <T, V> v) {cerr << "[ "; for (auto i : v) {_print(i); cerr << " ";} cerr << "]";}
 //input output and error file
 void OJ()
 {
@@ -307,8 +309,6 @@ int main()
 {
    OJ();
    ASSALAMU_ALAIKOM
-   ll n;
-   cin>>n;
-   cout<<n<<endl;
+   
    return 0;
 }
