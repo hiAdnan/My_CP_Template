@@ -159,33 +159,70 @@ ll modDiv(ll a, ll b, ll m)
 {
    return modMul(a, modInv(b, m), m);
 }
-const ll N = 1e6 + 5;
-const ll base = 31; // this should be greater than total distinct characters
-vll pw(N), inv(N), Hash(N);
-// i precalculate in buldHash function.
+const ll N = 1e5+5;
+pll mod1={1e9+7,1e9+9},base={53,67}; // base should be greater than total distinct characters
+vpll pw(N+5), inv(N+5), Hash(N+5);
+vll pr = {1000000007, 1000000009, 1000000021, 1000000033, 1000000087, 1000000093, 1000000097, 1000000103, 1000000123, 1000000181, 1000000207, 1000000223, 1000000241, 1000000271, 1000000289};
+vll bs = {31, 37, 53, 61, 67, 71};
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+long long get_random()
+{
+    return (long long)(rng());
+}
+ 
+long long get_random_in_range(long long L, long long R)
+{
+    long long rndm = get_random();
+    return L + (rndm % (R - L + 1));
+}
+ 
+void randomMod()
+{
+    ll i = get_random_in_range(0, pr.size() - 1);
+    mod1.F = pr[i];
+    pr.erase(pr.begin() + i);
+    i = get_random_in_range(0, pr.size() - 1);
+    mod1.S = pr[i]; 
+    i = get_random_in_range(0, bs.size() - 1);
+    base.F = bs[i];
+    bs.erase(bs.begin() + i);
+    i = get_random_in_range(0, bs.size() - 1);
+    base.S = bs[i];
+}
+
 void preCal()
 {
-   pw[0] = 1;
+   pw[0].F = pw[0].S= 1;
    for (ll i = 1; i < N; i++)
-      pw[i] = modMul(pw[i - 1], base, mod);
-   ll pw_inv = modInv(base, mod);
-   inv[0] = 1;
+   {
+      pw[i].F = modMul(pw[i - 1].F, base.F, mod1.F);
+      pw[i].S = modMul(pw[i - 1].S, base.S, mod1.S);
+   }
+   ll pw_inv1 = modInv(base.F, mod1.F);
+   ll pw_inv2 = modInv(base.S, mod1.S);
+   inv[0].F = inv[0].S = 1;
    for (ll i = 1; i < N; i++)
-      inv[i] = modMul(inv[i - 1], pw_inv, mod);
+   {
+      inv[i].F = modMul(inv[i - 1].F, pw_inv1, mod1.F);
+      inv[i].S = modMul(inv[i - 1].S, pw_inv2, mod1.S);
+   }
 }
-void buildHash(string s)
+void buildHash(const string& s)
 {
    ll n = sz(s);
    for (ll i = 0; i < n; i++)
    {
-      Hash[i] = modAdd((i == 0) ? 0 : Hash[i - 1], modMul(pw[i], s[i] - 'a' + 1, mod),mod);
+      Hash[i].F = modAdd((i == 0) ? 0 : Hash[i - 1].F, modMul(pw[i].F, s[i] - 'a' + 1, mod1.F),mod1.F);
+      Hash[i].S = modAdd((i == 0) ? 0 : Hash[i - 1].S, modMul(pw[i].S, s[i] - 'a' + 1, mod1.S),mod1.S);
    }
 }
-ll getHash(ll l, ll r)
+pll getHash(ll l, ll r)
 {
-   ll res = modSub(Hash[r], (l == 0) ? 0 : Hash[l - 1], mod);
-   res = modMul(res, inv[l], mod);
-   return res;
+   ll res1 = modSub(Hash[r].F, (l == 0) ? 0 : Hash[l - 1].F, mod1.F);
+   ll res2 = modSub(Hash[r].S, (l == 0) ? 0 : Hash[l - 1].S, mod1.S);
+   res1 = modMul(res1, inv[l].F, mod1.F);
+   res2 = modMul(res2, inv[l].S, mod1.S);
+   return {res1,res2};
 }
 ll double_cmp(double a, double b)
 {
@@ -296,7 +333,31 @@ void bfs(ll s)
       }
    }
 }
-//input output and error file
+// Define a custom hash function for std::pair<any type> ste::vector<any type>
+//now we can use pair<any tpe>,vector<any type> in unordered_set and unordered_map but we have to use a extra argument as CustomHash
+//unordered_set<pll,CustomHash>st; st.insert(pair<long long, long long);
+//unorderd_map<pll,ll,CustomHash>mp; mp[pll]++;
+struct CustomHash {
+    // Hash function for std::pair
+    template <typename T1, typename T2>
+    size_t operator()(const std::pair<T1, T2>& p) const {
+        size_t hash1 = std::hash<T1>()(p.first);
+        size_t hash2 = std::hash<T2>()(p.second);
+        // Combine the hashes
+        return hash1 ^ (hash2 << 1);
+    }
+
+    // Hash function for std::vector
+    template <typename T>
+    size_t operator()(const std::vector<T>& v) const {
+        size_t hash = 0;
+        for (const T& elem : v) {
+            hash ^= std::hash<T>()(elem) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        }
+        return hash;
+    }
+};
+//input,output and error detection file
 void OJ()
 {
 #ifndef ONLINE_JUDGE
