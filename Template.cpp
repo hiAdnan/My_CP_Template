@@ -161,7 +161,7 @@ ll modDiv(ll a, ll b, ll m)
 }
 const ll N = 1e5+5;
 pll mod1={1e9+7,1e9+9},base={53,67}; // base should be greater than total distinct characters
-vpll pw(N+5), inv(N+5), Hash(N+5);
+vpll pw(N+5), inv(N+5), PreHash(N+5),SuffHash(N+5);
 vll pr = {1000000007, 1000000009, 1000000021, 1000000033, 1000000087, 1000000093, 1000000097, 1000000103, 1000000123, 1000000181, 1000000207, 1000000223, 1000000241, 1000000271, 1000000289};
 vll bs = {31, 37, 53, 61, 67, 71};
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
@@ -176,7 +176,7 @@ long long get_random_in_range(long long L, long long R)
     return L + (rndm % (R - L + 1));
 }
  
-void randomMod()
+void randomModBase()
 {
     ll i = get_random_in_range(0, pr.size() - 1);
     mod1.F = pr[i];
@@ -207,21 +207,39 @@ void preCal()
       inv[i].S = modMul(inv[i - 1].S, pw_inv2, mod1.S);
    }
 }
-void buildHash(const string& s)
+void buildPreHash(const string& s)
 {
    ll n = sz(s);
    for (ll i = 0; i < n; i++)
    {
-      Hash[i].F = modAdd((i == 0) ? 0 : Hash[i - 1].F, modMul(pw[i].F, s[i] - 'a' + 1, mod1.F),mod1.F);
-      Hash[i].S = modAdd((i == 0) ? 0 : Hash[i - 1].S, modMul(pw[i].S, s[i] - 'a' + 1, mod1.S),mod1.S);
+      PreHash[i].F = modAdd((i == 0) ? 0 : PreHash[i - 1].F, modMul(pw[i].F, s[i] - 'a' + 1, mod1.F),mod1.F);
+      PreHash[i].S = modAdd((i == 0) ? 0 : PreHash[i - 1].S, modMul(pw[i].S, s[i] - 'a' + 1, mod1.S),mod1.S);
    }
 }
-pll getHash(ll l, ll r)
+void buildSuffHash(const string& s)
 {
-   ll res1 = modSub(Hash[r].F, (l == 0) ? 0 : Hash[l - 1].F, mod1.F);
-   ll res2 = modSub(Hash[r].S, (l == 0) ? 0 : Hash[l - 1].S, mod1.S);
+   ll n=sz(s);
+   ll ln=n-1;
+   for (ll i = ln; i >= 0; i--)
+   {
+      SuffHash[i].F = modAdd((i == ln) ? 0 : SuffHash[i + 1].F, modMul(pw[ln - i].F, s[i] - 'a' + 1, mod1.F), mod1.F);
+      SuffHash[i].S = modAdd((i == ln) ? 0 : SuffHash[i + 1].S, modMul(pw[ln - i].S, s[i] - 'a' + 1, mod1.S), mod1.S);
+   }
+}
+pll getPreHash(ll l, ll r)
+{
+   ll res1 = modSub(PreHash[r].F, (l == 0) ? 0 : PreHash[l - 1].F, mod1.F);
+   ll res2 = modSub(PreHash[r].S, (l == 0) ? 0 : PreHash[l - 1].S, mod1.S);
    res1 = modMul(res1, inv[l].F, mod1.F);
    res2 = modMul(res2, inv[l].S, mod1.S);
+   return {res1,res2};
+}
+pll getSuffHash(ll l, ll r,ll ln) //here ln is the last index(typically sz(s)-1) of the string.
+{
+   ll res1 = modSub(SuffHash[l].F, (r == ln) ? 0 : SuffHash[r + 1].F, mod1.F);
+   ll res2 = modSub(SuffHash[l].S, (r == ln) ? 0 : SuffHash[r + 1].S, mod1.S);
+   res1 = modMul(res1, inv[ln - r].F, mod1.F);
+   res2 = modMul(res2, inv[ln - r].S, mod1.S);
    return {res1,res2};
 }
 ll double_cmp(double a, double b)
@@ -313,6 +331,54 @@ ll Sub_Tree_Sz(ll node)
    Sub_sz[node] = curr_sz;
    return curr_sz;
 }
+
+ll timer = 0;
+vll in, low;
+void Bridge(ll node, ll par)
+{
+   vis[node] = 1;
+   in[node] = low[node] = timer++;
+   for (auto child : adj[node])
+   {
+      if (child == par)
+         continue; //direct parent
+      if (!vis[child])
+      {
+         //forward edge
+         Bridge(child, node);
+         low[node] = min(low[node], low[child]);
+         if (low[child] > in[node])
+            cout << node << " " << child <<"Is a Bridge"<< endl;
+      }
+      else
+         low[node] = min(low[node], in[child]); //back edge
+   }
+}
+
+void Cutpoint(ll node, ll par=-1) //articulation point
+{
+   vis[node] = 1;
+   in[node] = low[node] = timer++;
+   ll children = 0;
+   for (auto child : adj[node])
+   {
+      if (child == par)
+         continue; //direct parent
+      if (!vis[child])
+      {
+         //forward edge
+         Cutpoint(child, node);
+         low[node] = min(low[node], low[child]);
+         if (low[child] >= in[node] && par != -1)
+            cout << node << "Is a Cutpoint" << endl;
+         children++;
+      }
+      else
+         low[node] = min(low[node], in[child]); //back edge
+   }
+   if (par == -1 && children > 1)
+      cout << node << "Is a Cutpoint" << endl;
+}
 void bfs(ll s)
 {
    queue<ll> q;
@@ -332,6 +398,29 @@ void bfs(ll s)
          }
       }
    }
+}
+ll n,m;
+void TopSort()  // Topological Sort
+{
+   vll res;
+   priority_queue<ll,vector<ll>,greater<ll>>pq;
+   ll i;
+   for(i=1;i<=n;i++)
+      if(in[i]==0)
+       pq.push(i);
+   while(!pq.empty())
+   {
+      ll x=pq.top();
+      res.pb(x);
+      pq.pop();
+      for(auto node:adj[x])
+      {
+         in[node]--;
+         if(in[node]==0)
+           pq.push(node);
+      }
+   }
+   print(res);
 }
 // Define a custom hash function for std::pair<any type> ste::vector<any type>
 //now we can use pair<any tpe>,vector<any type> in unordered_set and unordered_map but we have to use a extra argument as CustomHash
@@ -357,7 +446,7 @@ struct CustomHash {
         return hash;
     }
 };
-//input,output and error detection file
+//input output and error file
 void OJ()
 {
 #ifndef ONLINE_JUDGE
@@ -370,6 +459,6 @@ int main()
 {
    OJ();
    ASSALAMU_ALAIKOM
-   
+
    return 0;
 }
